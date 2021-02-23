@@ -1,0 +1,1 @@
+A terminal version of the game Snake written in C.

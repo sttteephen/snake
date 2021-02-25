@@ -3,10 +3,11 @@
 #include <time.h>
 #include <errno.h> 
 #include <ncurses.h>
+#include <time.h>
 #include "msleep.h"
 
-#define BOARD_WIDTH 20
-#define BOARD_HEIGHT 10
+#define BOARD_WIDTH 30
+#define BOARD_HEIGHT 15
 
 void print_border();
 void print_intro();
@@ -19,48 +20,71 @@ int main()
     cbreak();
     keypad(stdscr, TRUE);
     noecho();
+    srand(time(0));
 
     int play;
     print_intro();
+
     if((play = getch()) == '1')
     {
         nodelay(stdscr, TRUE);
 
 
-        int headx, heady, input, direction, run;
-        headx = heady = 0;
+        int headx, heady, foodx, foody, score, input, direction, run;
+        headx = heady = score = 0;
+        foodx = rand() % BOARD_WIDTH;
+        foody = rand() % BOARD_HEIGHT;
 
+        refresh();
+        getch();
         int count = 0;
+
+        // game loop
         run = 1;
         while(run)
         {   
             clear();
+
+            // check for user input and use it to change direction of player
             input = getch();
             if(input == KEY_LEFT) {direction = 1;}
             else if(input == KEY_RIGHT) {direction = 2;}
             else if(input == KEY_UP) {direction = 3;}
             else if(input == KEY_DOWN) {direction = 4;}
+            else if(input == '0') {break;}
 
             if(direction == 1 && headx > 0) {headx--;}
             else if(direction == 2 && headx < BOARD_WIDTH-1) {headx++;}
             else if(direction == 3 && heady > 0) {heady--;}
             else if(direction == 4 && heady < BOARD_HEIGHT-1) {heady++;}
 
+            if(headx == foodx && heady == foody){
+                foodx = rand() % BOARD_WIDTH;
+                foody = rand() % BOARD_HEIGHT;
+                score += 10;
+            }
+
+            // print the board
             print_border();
             for(int i = 0; i < BOARD_HEIGHT; i++)
             {
                 printw("|");
                 for(int j = 0; j < BOARD_WIDTH; j++)
-                {
-                    i == heady && j == headx ? printw("0") : printw(" ");
+                {   
+                    if(i == heady && j == headx) {printw("0");}
+                    else if(i == foody && j == foodx)  {printw("X");}
+                    else {printw(" ");}
                 }
                 printw("|\n");
             }
             print_border();
 
+            printw("Score: %d\t", score);
             printw("%d\n", count++);
+
+            // update the screen and pause exectution
             refresh();
-            msleep(50);
+            msleep(80);
         }
     }
     
@@ -68,7 +92,7 @@ int main()
     return 0;
 }
 
-
+// prints top and bottom border of the board
 void print_border()
 {
     printw("+");

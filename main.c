@@ -11,11 +11,12 @@
 
 void print_border();
 void print_intro();
-int msleep(long msec);
-
+void print_endgame(int score);
+void print_board(int headx, int heady, int foodx, int foody, int score);
 
 int main()
 {
+    // initialize ncurses window and settings 
     initscr();
     cbreak();
     keypad(stdscr, TRUE);
@@ -27,37 +28,81 @@ int main()
 
     if((play = getch()) == '1')
     {
-        nodelay(stdscr, TRUE);
+        nodelay(stdscr, TRUE);  // do not pause execution for input
 
-
-        int headx, heady, foodx, foody, score, input, direction, run;
+        int headx, heady;    // coordinates of the snake head
+        int foodx, foody;    // coordinates of the food
+        int score, input, direction;
         headx = heady = score = 0;
         foodx = rand() % BOARD_WIDTH;
         foody = rand() % BOARD_HEIGHT;
 
-        refresh();
-        getch();
-        int count = 0;
-
         // game loop
-        run = 1;
+        int run = 1;
         while(run)
         {   
             clear();
 
             // check for user input and use it to change direction of player
-            input = getch();
-            if(input == KEY_LEFT) {direction = 1;}
-            else if(input == KEY_RIGHT) {direction = 2;}
-            else if(input == KEY_UP) {direction = 3;}
-            else if(input == KEY_DOWN) {direction = 4;}
-            else if(input == '0') {break;}
+            switch (input = getch())
+            {
+                case KEY_LEFT:
+                    direction = 1;
+                    break;
+                case KEY_RIGHT:
+                    direction = 2;
+                    break;
+                case KEY_UP:
+                    direction = 3;
+                    break;
+                case KEY_DOWN:
+                    direction = 4;
+                    break;
+                case '0':
+                    run = 0;
+                    break;
+                default:
+                    break;
+            }
 
-            if(direction == 1 && headx > 0) {headx--;}
-            else if(direction == 2 && headx < BOARD_WIDTH-1) {headx++;}
-            else if(direction == 3 && heady > 0) {heady--;}
-            else if(direction == 4 && heady < BOARD_HEIGHT-1) {heady++;}
+            // move player in direction as long as they have not reached the edge
+            if(direction == 1) 
+            {
+                headx--;
+                if(headx == -1){
+                    headx++;
+                    break;
+                }
+            }
+            else if(direction == 2) 
+            {
+                headx++;
+                if(headx == BOARD_WIDTH)
+                {
+                    headx--;
+                    break;
+                }
+            }
+            else if(direction == 3) 
+            {
+                heady--;
+                if(heady == -1)
+                {
+                    heady++;
+                    break;
+                }
+            }
+            else if(direction == 4) 
+            {
+                heady++;
+                if(heady == BOARD_HEIGHT)
+                {
+                    heady--;
+                    break;
+                }
+            }
 
+            // if player has come in contact with food increase the score and move the food
             if(headx == foodx && heady == foody){
                 foodx = rand() % BOARD_WIDTH;
                 foody = rand() % BOARD_HEIGHT;
@@ -65,40 +110,51 @@ int main()
             }
 
             // print the board
-            print_border();
-            for(int i = 0; i < BOARD_HEIGHT; i++)
-            {
-                printw("|");
-                for(int j = 0; j < BOARD_WIDTH; j++)
-                {   
-                    if(i == heady && j == headx) {printw("0");}
-                    else if(i == foody && j == foodx)  {printw("X");}
-                    else {printw(" ");}
-                }
-                printw("|\n");
-            }
-            print_border();
-
-            printw("Score: %d\t", score);
-            printw("%d\n", count++);
-
-            // update the screen and pause exectution
-            refresh();
+            print_board(headx, heady, foodx, foody, score);
+            // pause execution
             msleep(80);
         }
+        print_endgame(score);
     }
-    
+
     endwin();
     return 0;
 }
+
+
+// print the frame using the coordinates of objects to print
+void print_board(int headx, int heady, int foodx, int foody, int score)
+{
+    // print the top border
+    print_border();
+    for(int y = 0; y < BOARD_HEIGHT; y++)
+    {
+        printw("|");
+        for(int x = 0; x < BOARD_WIDTH; x++)
+        {   
+            if(y == heady && x == headx) {printw("0");}
+            else if(y == foody && x == foodx)  {printw("X");}
+            else {printw(" ");}
+        }
+        printw("|\n");
+    }
+    print_border();
+
+    printw("Score: %d\t", score);
+
+    // update the screen
+    refresh();
+}
+
 
 // prints top and bottom border of the board
 void print_border()
 {
     printw("+");
-    for(int k = 0; k < BOARD_WIDTH; k++) {printw("-");}
+    for(int i = 0; i < BOARD_WIDTH; i++) {printw("-");}
     printw("+\n");
 }
+
 
 // print animated intro screen 
 void print_intro()
@@ -111,7 +167,7 @@ void print_intro()
     int run = 1;
     while(run)
     {
-        // pause for 70 milliseconds then clear screen after every frame
+        // pause for 60 milliseconds then clear screen after every frame
         msleep(60);
         clear();
 
@@ -143,11 +199,22 @@ void print_intro()
         space_before++; // increase the number of spaces before the snake each frame
         if(space_before + snake_len == point_pos) {snake_len++;}
         if(space_before + snake_len == line_len) {run = 0;}
-        //+ snake_len + 1
         refresh();
     }
 
     printw("   - Press 1 to Play\n");
     printw("   - Press 0 to Exit\n");
+    refresh();
+}
+
+
+// print GAME OVER
+void print_endgame(int score)
+{
+    clear();
+    printw("GAME OVER\n");
+    printw("Score: %d\n", score);
+    char exit;
+    while((exit = getch()) != '0');
     refresh();
 }

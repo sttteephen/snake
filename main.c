@@ -7,14 +7,15 @@
 #include "msleep.h"
 #include "snake.h"
 
-#define BOARD_WIDTH 30
-#define BOARD_HEIGHT 15
+#define BOARD_WIDTH 25
+#define BOARD_HEIGHT 10
 
 
 void print_border();
 void print_intro();
 void print_endgame(int score);
 void print_board(struct Snake *snake,  int foodx, int foody, int score);
+void check_input(int *direction, int *run);
 
 
 int main()
@@ -38,7 +39,8 @@ int main()
         nodelay(stdscr, TRUE);  // do not pause execution for input
 
         int foodx, foody;    // coordinates of the food
-        int score, input, direction;
+        int score;
+        int direction;  // represents the direction the snake is travelling
 
         score = direction = 0;
         foodx = rand() % BOARD_WIDTH;
@@ -49,34 +51,17 @@ int main()
         while(run)
         {   
             clear();
-
-            // check for user input and use it to change direction of player
-            switch (input = getch())
-            {
-                case KEY_LEFT:
-                    direction = 1;
-                    break;
-                case KEY_RIGHT:
-                    direction = 2;
-                    break;
-                case KEY_UP:
-                    direction = 3;
-                    break;
-                case KEY_DOWN:
-                    direction = 4;
-                    break;
-                case '0':
-                    run = 0;
-                    break;
-                default:
-                    break;
-            }
             
-            // move snake one square in the direction and check if they have collided with wall
+            // check if arrow keys are being pressed and change direction of snake
+            check_input(&direction, &run);
+
+            // move snake one square in the given direction
             move_snake(&snake, direction);
+
+            // if snake has collided with snake or wall exit game loop
             if(!check_collision(&snake, BOARD_WIDTH, BOARD_HEIGHT))
             {
-                msleep(1000);
+                print_board(&snake, foodx, foody, score);
                 break;
             }
 
@@ -94,6 +79,7 @@ int main()
             // pause execution
             msleep(100);
         }
+        msleep(2000);
         print_endgame(score);
     }
 
@@ -102,21 +88,28 @@ int main()
 }
 
 
-// print the frame using the coordinates of objects to print
+// print the frame using the coordinates of objects
 void print_board(struct Snake *snake, int foodx, int foody, int score)
 {
-    // print the top border
     print_border();
+
+    // loop over every space on the board
     for(int y = 0; y < BOARD_HEIGHT; y++)
     {
         printw("|");
         for(int x = 0; x < BOARD_WIDTH; x++)
         {   
+            // check if space is occupied by a snake segment
             int is_snake = 0;
             for(int i = 0; i < snake->size; i++)
             {
-                if(y == snake->segment_list[i].posy && x == snake->segment_list[i].posx) {printw("0"); is_snake++;}
+                if(y == snake->segment_list[i].posy && x == snake->segment_list[i].posx) 
+                {
+                    printw("0"); 
+                    is_snake++;
+                }
             }
+            // check if space is occupied by food or empty
             if(y == foody && x == foodx)  {printw("X");}
             else if (!is_snake) {printw(" ");}
 
@@ -132,7 +125,7 @@ void print_board(struct Snake *snake, int foodx, int foody, int score)
 }
 
 
-// prints top and bottom border of the board
+// for printing top and bottom border of the board
 void print_border()
 {
     printw("+");
@@ -202,4 +195,31 @@ void print_endgame(int score)
     char exit;
     while((exit = getch()) != '0');
     refresh();
+}
+
+
+// check for user input and use it to change direction of player
+void check_input(int *direction, int *run)
+{
+    int input;
+    switch (input = getch())
+    {
+        case KEY_LEFT:
+            if(*direction != 2) {*direction = 1;}   // check the snake is not going back on itself
+            break;
+        case KEY_RIGHT:
+            if(*direction != 1) {*direction = 2;}
+            break;
+        case KEY_UP:
+            if(*direction != 4) {*direction = 3;}
+            break;
+        case KEY_DOWN:
+            if(*direction != 3) {*direction = 4;}
+            break;
+        case '0':
+            *run = 0;   // exit the game if 0 is pressed
+            break;
+        default:
+            break;
+    }
 }

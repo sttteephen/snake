@@ -9,10 +9,20 @@
 #define BOARD_WIDTH 30
 #define BOARD_HEIGHT 15
 
+// represents a segment of the snake
+struct Segment
+{
+    int posx;
+    int posy;
+};
+
 void print_border();
 void print_intro();
 void print_endgame(int score);
-void print_board(int headx, int heady, int foodx, int foody, int score);
+void print_board(struct Segment snake[50],  int foodx, int foody, int score);
+void init_snake(struct Segment snake[50]);
+int move_snake(int direction, struct Segment snake[50]);
+
 
 int main()
 {
@@ -28,12 +38,16 @@ int main()
 
     if((play = getch()) == '1')
     {
+        // setup the snake
+        struct Segment snake[50];
+        init_snake(snake);
+
         nodelay(stdscr, TRUE);  // do not pause execution for input
 
-        int headx, heady;    // coordinates of the snake head
         int foodx, foody;    // coordinates of the food
         int score, input, direction;
-        headx = heady = score = 0;
+
+        score = direction = 0;
         foodx = rand() % BOARD_WIDTH;
         foody = rand() % BOARD_HEIGHT;
 
@@ -65,54 +79,20 @@ int main()
                     break;
             }
 
-            // move player in direction as long as they have not reached the edge
-            if(direction == 1) 
-            {
-                headx--;
-                if(headx == -1){
-                    headx++;
-                    break;
-                }
-            }
-            else if(direction == 2) 
-            {
-                headx++;
-                if(headx == BOARD_WIDTH)
-                {
-                    headx--;
-                    break;
-                }
-            }
-            else if(direction == 3) 
-            {
-                heady--;
-                if(heady == -1)
-                {
-                    heady++;
-                    break;
-                }
-            }
-            else if(direction == 4) 
-            {
-                heady++;
-                if(heady == BOARD_HEIGHT)
-                {
-                    heady--;
-                    break;
-                }
-            }
+            // move snake one square in the direction and check if they have collided with wall
+            run = move_snake(direction, snake);
 
             // if player has come in contact with food increase the score and move the food
-            if(headx == foodx && heady == foody){
+            if(snake[0].posx == foodx && snake[0].posy == foody){
                 foodx = rand() % BOARD_WIDTH;
                 foody = rand() % BOARD_HEIGHT;
                 score += 10;
             }
 
             // print the board
-            print_board(headx, heady, foodx, foody, score);
+            print_board(snake, foodx, foody, score);
             // pause execution
-            msleep(80);
+            msleep(100);
         }
         print_endgame(score);
     }
@@ -121,9 +101,84 @@ int main()
     return 0;
 }
 
+void init_snake(struct Segment s[50])
+{
+    struct Segment head;
+    head.posx = BOARD_WIDTH/2;
+    head.posy = BOARD_HEIGHT/2;
+    s[0] = head;
+
+    struct Segment body;
+    body.posx = BOARD_WIDTH/2;
+    body.posy = BOARD_HEIGHT/2;
+    s[1] = body;
+
+    struct Segment end;
+    end.posx = -1;
+    end.posy = -1;
+    s[2] = end;
+}
+
+int move_snake(int direction, struct Segment snake[50])
+{
+    int nocollide = 1;
+    int prevx = snake[0].posx;
+    int prevy = snake[0].posy;
+    // move player in direction then check if they have reached an edge
+    if(direction == 1) 
+    {
+        snake[0].posx--;
+        if(snake[0].posx == -1){
+            snake[0].posx++;
+            nocollide = 0;
+        }
+    }
+    else if(direction == 2) 
+    {
+        snake[0].posx++;
+        if(snake[0].posx == BOARD_WIDTH)
+        {
+            snake[0].posx--;
+            nocollide = 0;
+        }
+    }
+    else if(direction == 3) 
+    {
+        snake[0].posy--;
+        if(snake[0].posy == -1)
+        {
+            snake[0].posy++;
+            nocollide = 0;
+        }
+    }
+    else if(direction == 4) 
+    {
+        snake[0].posy++;
+        if(snake[0].posy == BOARD_HEIGHT)
+        {
+            snake[0].posy--;
+            nocollide = 0;
+        }
+    }
+
+    int i = 1;
+    while(snake[i].posx != -1)
+    {
+        int tempx = snake[i].posx;
+        int tempy = snake[i].posy;
+        snake[i].posx = prevx;
+        snake[i].posy = prevy;
+        prevx = tempx;
+        prevy = tempy;
+        i++;
+    }
+    
+    return nocollide;
+}
+
 
 // print the frame using the coordinates of objects to print
-void print_board(int headx, int heady, int foodx, int foody, int score)
+void print_board(struct Segment snake[50], int foodx, int foody, int score)
 {
     // print the top border
     print_border();
@@ -132,9 +187,14 @@ void print_board(int headx, int heady, int foodx, int foody, int score)
         printw("|");
         for(int x = 0; x < BOARD_WIDTH; x++)
         {   
-            if(y == heady && x == headx) {printw("0");}
-            else if(y == foody && x == foodx)  {printw("X");}
-            else {printw(" ");}
+            int is_snake = 0;
+            for(int i = 0; snake[i].posx != -1; i++)
+            {
+                if(y == snake[i].posy && x == snake[i].posx) {printw("0"); is_snake++;}
+            }
+            if(y == foody && x == foodx)  {printw("X");}
+            else if (!is_snake) {printw(" ");}
+
         }
         printw("|\n");
     }

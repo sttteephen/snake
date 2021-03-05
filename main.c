@@ -8,7 +8,7 @@
 #include "snake.h"
 
 #define BOARD_WIDTH 25
-#define BOARD_HEIGHT 10
+#define BOARD_HEIGHT 15
 
 
 void print_border();
@@ -30,7 +30,7 @@ int main()
     int play;
     print_intro();
 
-    if((play = getch()) == '1')
+    while((play = getch()) == '1')
     {
         // setup the snake
         struct Snake snake;
@@ -58,13 +58,6 @@ int main()
             // move snake one square in the given direction
             move_snake(&snake, direction);
 
-            // if snake has collided with snake or wall exit game loop
-            if(!check_collision(&snake, BOARD_WIDTH, BOARD_HEIGHT))
-            {
-                print_board(&snake, foodx, foody, score);
-                break;
-            }
-
             // if player has come in contact with food increase the score and move the food
             if(snake.segment_list[0].posx == foodx && snake.segment_list[0].posy == foody){
                 foodx = rand() % BOARD_WIDTH;
@@ -76,11 +69,28 @@ int main()
             // print the board
             print_board(&snake, foodx, foody, score);
 
+            // if snake has collided with snake or wall exit game loop
+            if(!check_collision(&snake, BOARD_WIDTH, BOARD_HEIGHT))
+            {
+                msleep(1500);
+                break;
+            }
+
             // pause execution
             msleep(100);
         }
-        msleep(2000);
+
         print_endgame(score);
+        flushinp();
+        nodelay(stdscr, FALSE);
+        if((play = getch()) == '1')
+        {
+            continue;
+        }
+        else
+        {
+            break;
+        }
     }
 
     endwin();
@@ -161,7 +171,7 @@ void print_intro()
             }
             else if(i < space_before + snake_len)
             {
-                printw("=");
+                printw("0");
             }
             else if(i == point_pos)
             {
@@ -181,7 +191,7 @@ void print_intro()
     }
 
     printw("   - Press 1 to Play\n");
-    printw("   - Press 0 to Exit\n");
+    printw("   - Any other key to Exit\n");
     refresh();
 }
 
@@ -192,8 +202,8 @@ void print_endgame(int score)
     clear();
     printw("GAME OVER\n");
     printw("Score: %d\n", score);
-    char exit;
-    while((exit = getch()) != '0');
+    printw("   - Press 1 to Play Again\n");
+    printw("   - Any other key to Exit\n");
     refresh();
 }
 

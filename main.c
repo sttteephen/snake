@@ -34,7 +34,7 @@ int main()
     {
         // setup the snake
         struct Snake snake;
-        init_snake(&snake, BOARD_WIDTH, BOARD_HEIGHT);
+        init_snake(&snake, BOARD_WIDTH, BOARD_HEIGHT, 50);
 
         nodelay(stdscr, TRUE);  // do not pause execution for input
 
@@ -59,7 +59,8 @@ int main()
             move_snake(&snake, direction);
 
             // if player has come in contact with food increase the score and move the food
-            if(snake.segment_list[0].posx == foodx && snake.segment_list[0].posy == foody){
+            if(snake.segment_list[0].posx == foodx && snake.segment_list[0].posy == foody)
+            {
                 foodx = rand() % BOARD_WIDTH;
                 foody = rand() % BOARD_HEIGHT;
                 score += 10;
